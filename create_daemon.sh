@@ -76,7 +76,7 @@ public class MyFirstInvocable : IInvocable
         /// Sample MySQL logging (requires MYSQL_* .env variables to be set in your new .env).
         if (Environment.GetEnvironmentVariable("MYSQLPASSWORD").NotEmpty())
         {
-            int rows = await MySQLExceptionLogger.LogInfo("Invoking from /srv!", nameof(worker1));
+            int rows = await MySQLExceptionLogger.LogInfo("Invoking from /srv!", nameof($DAEMON_NAME));
         }
     }
 }
