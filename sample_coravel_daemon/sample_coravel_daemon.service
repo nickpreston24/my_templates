@@ -1,0 +1,22 @@
+[Unit]
+Description=sample coravel service console application
+
+[Service]
+# systemd will run this executable to start the service
+# if /usr/bin/dotnet doesn't work, use `which dotnet` to find correct dotnet executable path
+ExecStart=/usr/bin/dotnet ~/srv/sample_coravel_daemon/sample_coravel_daemon.dll
+# to query logs using journalctl, set a logical name here
+SyslogIdentifier=sample_coravel_daemon
+
+# Use your username to keep things simple.
+# If you pick a different user, make sure dotnet and all permissions are set correctly to run the app
+# To update permissions, use 'chown nick -R /srv/sample_coravel_daemon' to take ownership of the folder and files,
+#       Use 'chmod +x /srv/sample_coravel_daemon/sample_coravel_daemon' to allow execution of the executable file
+User=nick
+
+# This environment variable is necessary when dotnet isn't loaded for the specified user.
+# To figure out this value, run 'env | grep DOTNET_ROOT' when dotnet has been loaded into your shell.
+Environment=DOTNET_ROOT=/usr/lib64/dotnet
+
+[Install]
+WantedBy=multi-user.target

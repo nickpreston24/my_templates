@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>dotnet-sample_coravel_daemon-1746df9c-5f66-4524-847b-c79b24bffb19</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CodeMechanic.FileSystem" Version="1.1.0" />
+    <PackageReference Include="Coravel" Version="5.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="8.0.0" />
+    <PackageReference Include="System.Runtime.Caching" Version="8.0.0" />
+  </ItemGroup>
+
+<!--  <ItemGroup>-->
+<!--    <Reference Include="System.Runtime.Caching">-->
+<!--      <HintPath>..\..\..\..\..\.nuget\packages\system.runtime.caching\8.0.0\lib\net8.0\System.Runtime.Caching.dll</HintPath>-->
+<!--    </Reference>-->
+<!--  </ItemGroup>-->
+</Project>
