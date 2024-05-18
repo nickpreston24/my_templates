@@ -61,66 +61,56 @@ create_program(){
 
 ## Change Program.cs
 cat > Program.cs <<EOF
-using System;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
-using CodeMechanic.Diagnostics;
-using CodeMechanic.FileSystem;
 using CodeMechanic.Systemd.Daemons;
-using CodeMechanic.Types;
+using Coravel;
+using Coravel.Invocable;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
-namespace $DAEMON_NAME
+namespace $DAEMON_NAME;
+
+public class MyFirstInvocable : IInvocable
 {
-  class Program
+    public async Task Invoke()
     {
-        static async Task Main(
-            string[] args)
-        {
-            LoadEnv(debug: false);
-
-            int sleep = 7000;
-            if (args.Length > 0)
-            {
-                int.TryParse(args[0], out sleep);
-            }
-
-            while (true)
-            {
-                Console.WriteLine($"Working, pausing for {sleep} ms");
-                Thread.Sleep(sleep);
-                string pwd = Environment.GetEnvironmentVariable("MYSQLPASSWORD");
-                // Console.WriteLine("mysql password =  " + pwd);
-
-                if (pwd.NotEmpty())
-                {
-                    int rows_affected = await MySQLExceptionLogger.LogInfo("hello from " + nameof($DAEMON_NAME));
-                    Console.WriteLine($"Something bad happened, so we logged {rows_affected} messasges.");
-                }
-                else
-                {
-                    Console.WriteLine(
-                        "No .env file found with variable 'MYSQLPASSWORD'.  Update your local .env file with a valid MYSQLPASSWORD and restart.");
-                }
-            }
-        }
-
-        private static void LoadEnv(bool debug = false)
-        {
-            bool env_exists = File.Exists(".env");
-            string install_directory = Path.Combine("/srv/", nameof($DAEMON_NAME));
-            string env_path = Path.Combine(install_directory, ".env");
-            if (debug) Console.WriteLine($"Current install directory: '{install_directory}'");
-            if (debug) Console.WriteLine($".env file exists? (looking in {env_path} " + env_exists);
-            var env_settings = DotEnv.Load(env_path, debug: true);
-            if (debug) Console.WriteLine("env settings found in .env" + env_settings.Count);
-            if (env_settings.Count > 0) env_exists.Dump(nameof(env_settings));
-        }
+        Console.WriteLine("This is my first invocable!");
+        // Sample MySQL logging (requires MYSQL_* .env variables to be set in your new .env).
+        // int rows = await MySQLExceptionLogger.LogInfo("Invoking from /srv!", nameof(coravel6));
     }
+}
+
+public class Program
+{
+    public static async Task Main(string[] args)
+    {
+        IHost host = CreateHostBuilder(args)
+            .UseSystemd()
+            .Build();
+
+        host.Services.UseScheduler(scheduler =>
+        {
+            // Yes, it's this easy!
+            scheduler
+                .Schedule<MyFirstInvocable>()
+                .EveryFiveSeconds();
+            // Console.WriteLine("cool. I loaded the host w/o dying...");
+        });
+
+        host.Run();
+    }
+
+    public static IHostBuilder CreateHostBuilder(string[] args) =>
+        Host.CreateDefaultBuilder(args)
+            .ConfigureServices(services =>
+            {
+                services.AddScheduler();
+                services.AddTransient<MyFirstInvocable>();
+            });
 }
 EOF
 
 install_codemechanic_dependencies;
+install_coravel;
 
 # Restore dependencies
 dotnet restore
@@ -153,6 +143,7 @@ create_systemd_file() {
 echo "Creating local systemd file ..."
 
 cat > $DAEMON_NAME.service <<EOF
+
 [Unit]
 Description=Long running service/daemon created from .NET worker template
 
@@ -168,7 +159,7 @@ SyslogIdentifier=$DAEMON_NAME
 
 # Use your username to keep things simple.
 # If you pick a different user, make sure dotnet and all permissions are set correctly to run the app
-# To update permissions, use 'chown <user> -R /srv/$DAEMON_NAME' to take ownership of the folder and files,
+# To update permissions, use 'chown $USER -R /srv/$DAEMON_NAME' to take ownership of the folder and files,
 #       Use 'chmod +x /srv/$DAEMON_NAME/$DAEMON_NAME' to allow execution of the executable file
 User=$USER
 
@@ -184,20 +175,11 @@ Environment=DOTNET_ROOT=/usr/lib64/dotnet
 [Install]
 WantedBy=multi-user.target
 
+
+EOF
   
 }
 
-# [Unit]
-# Description=Demo service
-# After=network.target
-
-# [Service]
-# ExecStart=/usr/bin/dotnet /srv/$DAEMON_NAME/$DAEMON_NAME.dll 5000
-# Restart=on-failure
-
-# [Install]
-# WantedBy=multi-user.target
-# EOF
 
 configure_systemd() {
 
@@ -220,21 +202,23 @@ systemctl status $DAEMON_NAME
 
 
 create_republish_script(){
-  echo "stopping running service ... "
-  sudo systemctl stop $DAEMON_NAME # stop the $DAEMON_NAME service to remove any file-locks
-  echo "service stopped."
-  echo "Republishing service..."
-  sudo dotnet publish -c Release -o /srv/$DAEMON_NAME # release to your user directory
-  sudo cp .env /srv/$DAEMON_NAME/.env
 
-  echo "Updating systemctl ..."
-  sudo cp $DAEMON_NAME.service /etc/systemd/system/$DAEMON_NAME.service
-  sudo systemctl daemon-reload
-  sudo systemctl start $DAEMON_NAME  
+cat > republish_$DAEMON_NAME.sh <<EOF
+echo "stopping running service ... "
+sudo systemctl stop $DAEMON_NAME # stop the $DAEMON_NAME service to remove any file-locks
+echo "service stopped."
+echo "Republishing service..."
+sudo dotnet publish -c Release -o /srv/$DAEMON_NAME # release to your user directory
+sudo cp .env /srv/$DAEMON_NAME/.env
 
-  echo "restarting service..."
-  sudo systemctl start $DAEMON_NAME # start service
+echo "Updating systemctl ..."
+sudo cp $DAEMON_NAME.service /etc/systemd/system/$DAEMON_NAME.service
+sudo systemctl daemon-reload
+sudo systemctl start $DAEMON_NAME  
 
+echo "restarting service..."
+sudo systemctl start $DAEMON_NAME # start service
+EOF
 }
 
 
