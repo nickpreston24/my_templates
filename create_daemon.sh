@@ -75,7 +75,7 @@ public class MyFirstInvocable : IInvocable
     {
         Console.WriteLine("This is my first invocable!");
         // Sample MySQL logging (requires MYSQL_* .env variables to be set in your new .env).
-        // int rows = await MySQLExceptionLogger.LogInfo("Invoking from /srv!", nameof(coravel6));
+        // int rows = await MySQLExceptionLogger.LogInfo("Invoking from /srv!", nameof($DAEMON_NAME));
     }
 }
 
