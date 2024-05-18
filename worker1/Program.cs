@@ -1,4 +1,5 @@
 using CodeMechanic.Systemd.Daemons;
+using CodeMechanic.Types;
 using Coravel;
 using Coravel.Invocable;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,7 +13,10 @@ public class MyFirstInvocable : IInvocable
     {
         Console.WriteLine("This is my first invocable!");
         /// Sample MySQL logging (requires MYSQL_* .env variables to be set in your new .env).
-        int rows = await MySQLExceptionLogger.LogInfo("Invoking from /srv!", nameof(worker1));
+        if (Environment.GetEnvironmentVariable("MYSQLPASSWORD").NotEmpty())
+        {
+            int rows = await MySQLExceptionLogger.LogInfo("Invoking from /srv!", nameof(worker1));
+        }
     }
 }
 
