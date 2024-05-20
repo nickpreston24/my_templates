@@ -4,6 +4,8 @@ echo "service stopped."
 echo "Republishing service..."
 sudo dotnet publish -c Release -o /srv/worker1 # release to your user directory
 sudo cp .env /srv/worker1/.env
+sudo cp *.json /srv/worker1/
+
 
 echo "Updating systemctl ..."
 sudo cp worker1.service /etc/systemd/system/worker1.service

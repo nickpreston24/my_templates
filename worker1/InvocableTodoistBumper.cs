@@ -2,16 +2,17 @@ using System.Diagnostics;
 using System.Globalization;
 using CodeMechanic.Diagnostics;
 using CodeMechanic.Systemd.Daemons;
+using CodeMechanic.Todoist;
 using CodeMechanic.Types;
 using Coravel.Invocable;
 
 namespace worker1;
 
-public class TodoistInvocable : IInvocable
+public class InvocableTodoistBumper : IInvocable
 {
     private readonly ITodoistSchedulerService todoist;
 
-    public TodoistInvocable(ITodoistSchedulerService svc)
+    public InvocableTodoistBumper(ITodoistSchedulerService svc)
     {
         todoist = svc;
     }
@@ -21,27 +22,19 @@ public class TodoistInvocable : IInvocable
         string message = $"Attempting todoist processing ({DateTime.Now.ToString(CultureInfo.InvariantCulture)})";
         await MySQLExceptionLogger.LogInfo(message, nameof(worker1));
 
-        // await BumpLabeledTasks(7);
-        await CreateFullWeek();
+        await BumpLabeledTasks(7);
     }
 
-    private async Task CreateFullWeek()
+    private async Task TestDeletionById(TodoistTask created_todo)
     {
-        var candidates = await todoist.SearchTodos(new TodoistTaskSearch()
-        {
-        });
-        candidates
-            .Where(x => !x?.due?.is_recurring.ToBoolean(false) ?? false)
-            .Take(7)
-            .Dump("candidates for full week")
-            ;
+        var deleted_task = await todoist.DeleteTodo(created_todo.id);
+        Console.WriteLine($"deleted todo {deleted_task.content} with id:{deleted_task.id}");
     }
 
     private async Task BumpLabeledTasks(int days)
     {
         var watch = Stopwatch.StartNew();
-        var bump_to = DateTime.Now.AddDays(days);
-        var rescheduled_todos = await todoist.BumpTasks(bump_to);
+        var rescheduled_todos = await todoist.BumpTasks(14);
         watch.Stop();
 
         string update_message =

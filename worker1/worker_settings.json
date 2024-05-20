@@ -1,0 +1,7 @@
+{
+  "bump": {
+    "enabled": false,
+    "wait_minutes": "15",
+    "wait_seconds": "5"
+  }
+}

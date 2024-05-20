@@ -1,8 +1,11 @@
+using CodeMechanic.Diagnostics;
 using CodeMechanic.FileSystem;
+using CodeMechanic.RazorHAT.Services;
 using CodeMechanic.Types;
 using Coravel;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Newtonsoft.Json;
 
 namespace worker1;
 
@@ -16,35 +19,54 @@ public class Program
             .Build();
 
         host.Services.UseScheduler(scheduler =>
-        {
-            var prod_maybe = Environment.GetEnvironmentVariable("MODE").ToMaybe();
-
-            prod_maybe.Case<string>(some: _ =>
             {
-                int seconds = Environment.GetEnvironmentVariable("SECONDS").ToInt(30);
+                var prod_maybe = Environment.GetEnvironmentVariable("MODE").ToMaybe();
+
+                var settings = ConfigReader
+                    .LoadConfig<WorkerSettings>("worker_settings.json"
+                        , fallback: new WorkerSettings());
+                // settings.Dump(nameof(settings));
+
+                /** SMART OVERDUE TASKS RESCHEDULER **/
 
                 scheduler
-                    .Schedule<TodoistInvocable>()
-                    .EverySeconds(seconds);
+                    .Schedule<InvokableTodoistSmartRescheduler>()
+                    .EveryMinute()
+                    // .Cron("00 9,13,20 * * *")
+                    .RunOnceAtStart()
+                    .PreventOverlapping(nameof(InvocableTodoistBumper));
 
-                return _;
-            }, none: () =>
-            {
-                int minutes = Environment.GetEnvironmentVariable("MINUTES").ToInt(15);
-                scheduler
-                    .Schedule<TodoistInvocable>()
-                    .EverySeconds(60 * minutes);
+                if (settings.bump.enabled)
+                    /** AUTO BUMPER */
 
-                return "";
-            });
+                    prod_maybe.Case<string>(some: _ =>
+                    {
+                        scheduler
+                            .Schedule<InvocableTodoistBumper>()
+                            .EverySeconds(settings.bump.wait_seconds)
+                            .PreventOverlapping(nameof(InvokableTodoistSmartRescheduler));
+                        return _;
+                    }, none: () =>
+                    {
+                        scheduler
+                            .Schedule<InvocableTodoistBumper>()
+                            .EverySeconds(60 * settings.bump.wait_minutes)
+                            .PreventOverlapping(nameof(InvokableTodoistSmartRescheduler))
+                            ;
 
-            // scheduler
-            //     .Schedule<TodoistInvocable>()
-            //     .EverySeconds(30);
-        });
+                        return "";
+                    });
+            })
+            .OnError((exception) => LogExceptionToDB(exception));
 
         host.Run();
     }
+
+    private static async Task LogExceptionToDB(Exception exception)
+    {
+        await TemporaryExceptionLogger.LogException(exception);
+    }
+
 
     public static IHostBuilder CreateHostBuilder(string[] args) =>
         Host.CreateDefaultBuilder(args)
@@ -54,6 +76,34 @@ public class Program
 
                 services.AddScheduler();
                 services.AddTransient<MyFirstInvocable>();
-                services.AddTransient<TodoistInvocable>();
+                services.AddTransient<InvocableTodoistBumper>();
+                services.AddTransient<InvokableTodoistSmartRescheduler>();
             });
+}
+
+public class WorkerSettings
+{
+    public Bump bump { get; set; }
+}
+
+public record Bump
+{
+    public bool enabled { get; set; } = false;
+    public int wait_minutes { get; set; } = 5;
+    public int wait_seconds { get; set; } = 10;
+}
+
+public static class ConfigReader
+{
+    public static T LoadConfig<T>(string filename, T fallback)
+    {
+        string cwd = Directory.GetCurrentDirectory();
+        string file_path = Path.Combine(cwd, filename);
+        // Console.WriteLine("file path : " + file_path);
+        Console.WriteLine($"config for {typeof(T).Name} " + file_path);
+        string json = file_path.NotEmpty() ? File.ReadAllText(file_path) : string.Empty;
+        Console.WriteLine("raw json: " + json);
+        var settings = json.Length > 0 ? JsonConvert.DeserializeObject<T>(json) : fallback;
+        return settings;
+    }
 }

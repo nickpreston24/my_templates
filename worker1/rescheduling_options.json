@@ -1,0 +1,53 @@
+{
+  "reschedules": [
+    {
+      "name": "All Non Recurring Tasks",
+      "debug": false,
+      "enabled": true,
+      "filter": "!recurring",
+      "daily_limit": "1",
+      "_cron": "00 7,10,13 * * *"
+    },
+    {
+      "name": "All FullDay project and labeled tasks",
+      "enabled": false,
+      "filter": "#FullDays | @fullday",
+      "daily_limit": "2"
+    },
+    {
+      "debug": false,
+      "enabled": false,
+      "filter": "overdue & recurring",
+      "daily_limit": "1"
+    },
+    {
+      "debug": false,
+      "enabled": false,
+      "filter": "@pinned"
+    },
+    {
+      "debug": false,
+      "enabled": false,
+      "filter": "@anytime & !recurring & p2",
+      "daily_limit": 1
+    },
+    {
+      "debug": false,
+      "enabled": false,
+      "filter": "@anytime & !recurring & (p3 | p4)",
+      "daily_limit": 2
+    },
+    {
+      "debug": false,
+      "enabled": false,
+      "filter": "!recurring & #Inbox",
+      "daily_limit": 2
+    },
+    {
+      "debug": false,
+      "enabled": false,
+      "filter": "overdue & recurring",
+      "daily_limit": "5"
+    }
+  ]
+}
