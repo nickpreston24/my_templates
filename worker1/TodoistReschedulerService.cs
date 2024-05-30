@@ -89,12 +89,19 @@ public class TodoistSchedulerService : ITodoistSchedulerService
         if (search == null) throw new ArgumentNullException(nameof(search));
 
         string joined_ids = string.Join(",", search.ids);
-        string label = search.label;
+        string label = search.label.Dump("labels");
         string filter = search.filter;
+        string project_id = search.project_id;
 
-        string uri = $"https://api.todoist.com/rest/v2/tasks?todos={joined_ids}&label={label}&filter={filter}";
+        // string uri = "https://api.todoist.com/rest/v2/tasks";
+        string uri =
+            // $"https://api.todoist.com/rest/v2/tasks?project_id={project_id}&todos={joined_ids}&label={label}&filter={filter}";
+            $"https://api.todoist.com/rest/v2/tasks?label={label}";
+
+        string sample_json = JsonConvert.SerializeObject(new TodoistUpdates() { labels = "fullday".AsArray() });
+
         Console.WriteLine($"{nameof(SearchTodos)} uri " + uri);
-        var content = await GetContentAsync(uri, api_key, false);
+        var content = await GetContentAsync(uri, api_key, debug: false);
         var todos = JsonConvert.DeserializeObject<List<TodoistTask>>(content);
         Console.WriteLine("total todos:>> " + todos.Count);
         return todos;
@@ -108,11 +115,25 @@ public class TodoistSchedulerService : ITodoistSchedulerService
         //    Console.WriteLine("uri :>> " + uri);
     }
 
-    private async Task<string> GetContentAsync(string uri, string bearer_token, bool debug = false)
+    private async Task<string> GetContentAsync(
+        string uri
+        , string bearer_token
+        , string json = ""
+        , bool debug = false)
     {
         using HttpClient http = new HttpClient();
         http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", bearer_token);
-        var response = await http.GetAsync(uri);
+
+        var request = new HttpRequestMessage(HttpMethod.Get, uri);
+        if (json.NotEmpty())
+        {
+            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            request.Content = new StringContent(json, Encoding.UTF8);
+            request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+        }
+
+        var response = await http.SendAsync(request);
+        // var response = await http.GetAsync(uri);
         response.EnsureSuccessStatusCode();
         var content = await response.Content.ReadAsStringAsync();
         // if (debug)
@@ -327,6 +348,7 @@ public class TodoistTaskSearch
     public string filter { get; set; } = string.Empty;
     public string[] ids { get; set; } = Array.Empty<string>();
     public string label { get; set; } = string.Empty;
+    public string project_id { get; set; } = string.Empty;
 }
 
 public class TodoistUpdates

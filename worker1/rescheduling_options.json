@@ -3,14 +3,14 @@
     {
       "name": "All Non Recurring Tasks",
       "debug": false,
-      "enabled": true,
+      "enabled": false,
       "filter": "!recurring",
       "daily_limit": "1",
       "_cron": "00 7,10,13 * * *"
     },
     {
       "name": "All FullDay project and labeled tasks",
-      "enabled": false,
+      "enabled": true,
       "filter": "#FullDays | @fullday",
       "daily_limit": "2"
     },

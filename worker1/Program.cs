@@ -30,9 +30,9 @@ public class Program
                 /** SMART OVERDUE TASKS RESCHEDULER **/
 
                 scheduler
-                    .Schedule<InvokableTodoistSmartRescheduler>()
-                    .EveryMinute()
-                    // .Cron("00 9,13,20 * * *")
+                    .Schedule<InvokableTodoistRescheduler>()
+                    // .EveryMinute()
+                    .Cron("00 9,13,20 * * *")
                     .RunOnceAtStart()
                     .PreventOverlapping(nameof(InvocableTodoistBumper));
 
@@ -44,14 +44,14 @@ public class Program
                         scheduler
                             .Schedule<InvocableTodoistBumper>()
                             .EverySeconds(settings.bump.wait_seconds)
-                            .PreventOverlapping(nameof(InvokableTodoistSmartRescheduler));
+                            .PreventOverlapping(nameof(InvokableTodoistRescheduler));
                         return _;
                     }, none: () =>
                     {
                         scheduler
                             .Schedule<InvocableTodoistBumper>()
                             .EverySeconds(60 * settings.bump.wait_minutes)
-                            .PreventOverlapping(nameof(InvokableTodoistSmartRescheduler))
+                            .PreventOverlapping(nameof(InvokableTodoistRescheduler))
                             ;
 
                         return "";
@@ -77,7 +77,7 @@ public class Program
                 services.AddScheduler();
                 services.AddTransient<MyFirstInvocable>();
                 services.AddTransient<InvocableTodoistBumper>();
-                services.AddTransient<InvokableTodoistSmartRescheduler>();
+                services.AddTransient<InvokableTodoistRescheduler>();
             });
 }
 
