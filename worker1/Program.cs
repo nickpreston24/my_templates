@@ -5,7 +5,6 @@ using CodeMechanic.Types;
 using Coravel;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Newtonsoft.Json;
 
 namespace worker1;
 
@@ -31,14 +30,14 @@ public class Program
 
                 scheduler
                     .Schedule<InvokableTodoistRescheduler>()
-                    // .EveryMinute()
-                    .Cron("00 9,13,20 * * *")
+                    .EveryMinute()
+                    // .Cron("00 9,13,20 * * *")
                     .RunOnceAtStart()
                     .PreventOverlapping(nameof(InvocableTodoistBumper));
 
                 if (settings.bump.enabled)
                     /** AUTO BUMPER */
-
+    
                     prod_maybe.Case<string>(some: _ =>
                     {
                         scheduler
@@ -79,31 +78,4 @@ public class Program
                 services.AddTransient<InvocableTodoistBumper>();
                 services.AddTransient<InvokableTodoistRescheduler>();
             });
-}
-
-public class WorkerSettings
-{
-    public Bump bump { get; set; }
-}
-
-public record Bump
-{
-    public bool enabled { get; set; } = false;
-    public int wait_minutes { get; set; } = 5;
-    public int wait_seconds { get; set; } = 10;
-}
-
-public static class ConfigReader
-{
-    public static T LoadConfig<T>(string filename, T fallback)
-    {
-        string cwd = Directory.GetCurrentDirectory();
-        string file_path = Path.Combine(cwd, filename);
-        // Console.WriteLine("file path : " + file_path);
-        Console.WriteLine($"config for {typeof(T).Name} " + file_path);
-        string json = file_path.NotEmpty() ? File.ReadAllText(file_path) : string.Empty;
-        Console.WriteLine("raw json: " + json);
-        var settings = json.Length > 0 ? JsonConvert.DeserializeObject<T>(json) : fallback;
-        return settings;
-    }
 }

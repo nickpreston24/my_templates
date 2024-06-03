@@ -94,18 +94,21 @@ public class TodoistSchedulerService : ITodoistSchedulerService
         string project_id = search.project_id;
 
         // string uri = "https://api.todoist.com/rest/v2/tasks";
-        string uri =
-            // $"https://api.todoist.com/rest/v2/tasks?project_id={project_id}&todos={joined_ids}&label={label}&filter={filter}";
-            $"https://api.todoist.com/rest/v2/tasks?label={label}";
+        string uri = new StringBuilder("https://api.todoist.com/rest/v2/tasks?")
+            .AppendIf((_) => joined_ids.NotEmpty() && joined_ids.Length >= 1, $"todos={joined_ids}&")
+            .AppendIf((_) => label.NotEmpty(), $"label={label}&")
+            .AppendIf((_) => filter.NotEmpty(), $"filter={filter}&")
+            .AppendIf((_) => project_id.NotEmpty(), $"project_id={project_id}&")
+            .RemoveFromEnd(1)
+            .ToString();
 
-        string sample_json = JsonConvert.SerializeObject(new TodoistUpdates() { labels = "fullday".AsArray() });
-
-        Console.WriteLine($"{nameof(SearchTodos)} uri " + uri);
+        Console.WriteLine($"{nameof(SearchTodos)}() uri " + uri);
         var content = await GetContentAsync(uri, api_key, debug: false);
         var todos = JsonConvert.DeserializeObject<List<TodoistTask>>(content);
         Console.WriteLine("total todos:>> " + todos.Count);
         return todos;
 
+        // string sample_json = JsonConvert.SerializeObject(new TodoistUpdates() { labels = "fullday".AsArray() });
 
         // var ids = todos.SelectMany(t => t.id);
         // string joined_ids = string.Join(",", ids);
@@ -330,36 +333,6 @@ public class TodoistSchedulerService : ITodoistSchedulerService
             return props.Where(p => p.Writable).ToList();
         }
     }
-}
-
-public record BumpTime
-{
-    public string unit { get; set; } = string.Empty;
-    public int value { get; set; }
-
-    public int days => (years * 365) + (months * 30) + (weeks * 7) + (unit.Equals("d") ? value : 0);
-    public int weeks => unit.Equals("w") ? value : 0;
-    public int months => unit.Equals("mo") ? value : 0;
-    public int years => unit.Equals("y") ? value : 0;
-}
-
-public class TodoistTaskSearch
-{
-    public string filter { get; set; } = string.Empty;
-    public string[] ids { get; set; } = Array.Empty<string>();
-    public string label { get; set; } = string.Empty;
-    public string project_id { get; set; } = string.Empty;
-}
-
-public class TodoistUpdates
-{
-    public string priority { get; set; } = string.Empty;
-    public string content { set; get; } = string.Empty;
-    public string due_date { set; get; } = string.Empty;
-    public string[] labels { get; set; } = Array.Empty<string>();
-    public string id { get; set; } = string.Empty;
-    public string description { get; set; } = string.Empty;
-    public string due_string { get; set; } = null;
 }
 
 public interface ITodoistSchedulerService

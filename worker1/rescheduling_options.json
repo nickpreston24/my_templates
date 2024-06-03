@@ -1,18 +1,48 @@
 {
   "reschedules": [
     {
+      "name": "All Recurring Tasks",
+      "debug": true,
+      "enabled": false,
+      "filter": "recurring",
+      "dry_run": true,
+      "task_limit": 10
+    },
+    {
       "name": "All Non Recurring Tasks",
       "debug": false,
       "enabled": false,
       "filter": "!recurring",
-      "daily_limit": "1",
+      "daily_limit": 5,
+      "task_limit": 100,
+      "dry_run": true,
       "_cron": "00 7,10,13 * * *"
     },
     {
-      "name": "All FullDay project and labeled tasks",
+      "name": "All Car tasks",
+      "debug": false,
       "enabled": true,
-      "filter": "#FullDays | @fullday",
-      "daily_limit": "2"
+      "filter": "@car & !recurring",
+      "daily_limit": 5,
+      "task_limit": 100,
+      "dry_run": false
+    },
+    {
+      "name": "All NoDate (never scheduled) tasks",
+      "debug": false,
+      "enabled": true,
+      "filter": "@nodate",
+      "daily_limit": 5,
+      "task_limit": 100,
+      "dry_run": false
+    },
+    {
+      "name": "All FullDay project and labeled tasks",
+      "enabled": false,
+      "filter": "!recurring & (#FullDays | @fullday)",
+      "daily_limit": 5,
+      "task_limit": 10,
+      "dry_run": true
     },
     {
       "debug": false,
