@@ -3,7 +3,7 @@ using System.Net.Http.Headers;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
-using CodeMechanic.Advanced.Regex;
+using CodeMechanic.RegularExpressions;
 using CodeMechanic.Async;
 using CodeMechanic.Diagnostics;
 using CodeMechanic.Todoist;
